@@ -14,3 +14,11 @@ spring:
           uri: lb://user-service
           predicates:
             - Path=/users/**
+        - id: task-service
+          uri: lb://task-service
+          predicates:
+            - Path=/tasks/**
+        - id: file-service
+          uri: lb://file-service
+          predicates:
+            - Path=/files/**

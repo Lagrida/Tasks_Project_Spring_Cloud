@@ -19,7 +19,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.lagrida.entities.User;
 import com.lagrida.services.RestException;
 
 import io.jsonwebtoken.Claims;
@@ -31,7 +30,7 @@ import io.jsonwebtoken.Jwts;
 public class JwtFilter extends OncePerRequestFilter{
 	
 	@Autowired
-	private JwtUtility jwtUtility;
+	private JwtTokenSecret jwtTokenSecret;
 		
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -43,7 +42,11 @@ public class JwtFilter extends OncePerRequestFilter{
         }
         String token = authorizationHeader.substring(7);
         try {
-            Claims body = jwtUtility.getJwsBody(token);
+            Jws<Claims> claimsJws = Jwts.parserBuilder()
+                    .setSigningKey(jwtTokenSecret.getSecret().getBytes())
+                    .build()
+                    .parseClaimsJws(token);
+            Claims body = claimsJws.getBody();
             String username = body.getSubject();
             List<String> list = (List<String>) body.get("authorities", ArrayList.class);
             Set<SimpleGrantedAuthority> simpleGrantedAuthorities = list.stream()
