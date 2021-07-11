@@ -10,11 +10,13 @@ import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinTable;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
@@ -50,7 +52,10 @@ public class Task {
 	@CollectionTable
 	private Set<String> files = new HashSet<String>();
 	
-	private int type = 0; // 0 task, 1 In progress, 2 completed
+	private int type = 0; // 0 initial, 1 In progress, 2 completed
+	
+	@OneToOne(fetch=FetchType.EAGER)
+	private Signature signature;
 	
 	@ColumnDefault(value="CURRENT_TIMESTAMP")
 	@CreationTimestamp
@@ -59,10 +64,7 @@ public class Task {
 	@UpdateTimestamp
 	private LocalDateTime updatedOn;
 	
-	public Task(){
-		
-	}
-
+	public Task(){}
 	public Task(
 		String title,
 		String description, Set<Long> users) {
@@ -70,77 +72,64 @@ public class Task {
 		this.description = description;
 		this.users = users;
 	}
-
 	public String getTitle() {
 		return title;
 	}
-
 	public void setTitle(String title) {
 		this.title = title;
 	}
-
 	public String getDescription() {
 		return description;
 	}
-
 	public void setDescription(String description) {
 		this.description = description;
 	}
-
 	public Set<Long> getUsers() {
 		return users;
 	}
-
 	public void setUsers(Set<Long> users) {
 		this.users = users;
 	}
-
 	public long getId() {
 		return id;
 	}
-
 	public void setId(long id) {
 		this.id = id;
 	}
-
 	public long getUserOwner() {
 		return userOwner;
 	}
-
 	public void setUserOwner(long userOwner) {
 		this.userOwner = userOwner;
 	}
-
 	public Set<String> getFiles() {
 		return files;
 	}
-
 	public void setFiles(Set<String> files) {
 		this.files = files;
 	}
-
 	public LocalDateTime getCreatedOn() {
 		return createdOn;
 	}
-
 	public void setCreatedOn(LocalDateTime createdOn) {
 		this.createdOn = createdOn;
 	}
-
 	public LocalDateTime getUpdatedOn() {
 		return updatedOn;
 	}
-
 	public void setUpdatedOn(LocalDateTime updatedOn) {
 		this.updatedOn = updatedOn;
 	}
-
 	public int getType() {
 		return type;
 	}
-
 	public void setType(int type) {
 		this.type = type;
 	}
-	
+	public Signature getSignature() {
+		return signature;
+	}
+	public void setSignature(Signature signature) {
+		this.signature = signature;
+	}
 }

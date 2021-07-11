@@ -8,6 +8,7 @@ public class Task {
 	private long id;
 	private long userOwner;
 	private Set<String> files = new HashSet<String>();
+	private Set<Long> users = new HashSet<Long>();
 	
 	public Task() {
 		
@@ -35,4 +36,11 @@ public class Task {
 	public void setFiles(Set<String> files) {
 		this.files = files;
 	}
+	public Set<Long> getUsers() {
+		return users;
+	}
+	public void setUsers(Set<Long> users) {
+		this.users = users;
+	}
+	
 }

@@ -18,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -30,9 +31,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.lagrida.entities.Signature;
 import com.lagrida.entities.Task;
 import com.lagrida.microservices.FileService;
 import com.lagrida.microservices.UserService;
+import com.lagrida.repositories.SignatureRepository;
 import com.lagrida.repositories.TaskRepository;
 import com.lagrida.security.jwt.JwtUtility;
 import com.lagrida.services.RestException;
@@ -54,6 +57,9 @@ public class PrincipalController {
 	private TaskRepository taskRepository;
 	
 	@Autowired
+	private SignatureRepository signatureRepository;
+	
+	@Autowired
 	private FileService fileService;
 	
 	@Autowired
@@ -63,10 +69,39 @@ public class PrincipalController {
 	
 	@GetMapping("/get_task/{id}")
 	@PreAuthorize("hasRole('ROLE_USER')")
-	public Task getTask(@PathVariable long id) {
+	public Task getTask(@PathVariable long id, HttpServletRequest request) {
+		//----------------------------- Stateless getting user ID -------------------------------
+		String authorizationHeader = request.getHeader("Authorization");
+		String token = authorizationHeader.substring(7);
+		long UserIdAuthentificated = jwtUtility.getUserIdAuthentificated(token);
+		boolean isAdmin = jwtUtility.isAdmin(token);
+		//---------------------------------------------------------------------------------------
 		Task task = taskRepository.findById(id).orElseThrow(() -> new RestException("task not found", HttpStatus.NOT_FOUND));
-		return task;
+		if(isAdmin || task.getUsers().contains(UserIdAuthentificated)) {
+			return task;
+		}
+		throw new RestException("Action not allowed", HttpStatus.FORBIDDEN);
 	}
+	@PatchMapping("/change_task_type/{taskId}/{type}")
+	@PreAuthorize("hasRole('ROLE_USER')")
+	public Task updateTaskType(@PathVariable long taskId, @PathVariable int type, HttpServletRequest request) {
+		List<Integer> allowedTypes = Arrays.asList(0, 1);
+		//----------------------------- Stateless getting user ID -------------------------------
+		String authorizationHeader = request.getHeader("Authorization");
+		String token = authorizationHeader.substring(7);
+		long UserIdAuthentificated = jwtUtility.getUserIdAuthentificated(token);
+		boolean isAdmin = jwtUtility.isAdmin(token);
+		//---------------------------------------------------------------------------------------
+		Task task = taskRepository.findById(taskId).orElseThrow(() -> new RestException("task not found", HttpStatus.NOT_FOUND));
+		if(allowedTypes.contains(type)) {
+			task.setType(type);
+			if(isAdmin || task.getUsers().contains(UserIdAuthentificated)) {
+				return taskRepository.save(task);
+			}
+		}
+		throw new RestException("Action not allowed", HttpStatus.FORBIDDEN);
+	}
+	
 	@GetMapping("/get_full_tasks")
 	@PreAuthorize("hasRole('ROLE_USER')")
 	public List<TaskEager> getFullTasks(HttpServletRequest request) {
@@ -182,5 +217,29 @@ public class PrincipalController {
 	    Map<String, Object> response = new HashMap<>();
 	    response.put("message", "File added successfuly");
 	    return ResponseEntity.ok().body(response);
+	}
+	@PreAuthorize("hasRole('ROLE_USER')")
+	@PostMapping("/add_signature_2_task/{taskId}/{fileName}")
+	@Transactional
+	public ResponseEntity<Map<String, Object>> addSignature2Task(@PathVariable long taskId, @PathVariable String fileName, HttpServletRequest request) {
+		//----------------------------- Stateless getting user ID -------------------------------
+		String authorizationHeader = request.getHeader("Authorization");
+		String token = authorizationHeader.substring(7);
+		long UserIdAuthentificated = jwtUtility.getUserIdAuthentificated(token);
+		boolean isAdmin = jwtUtility.isAdmin(token);
+		//---------------------------------------------------------------------------------------
+		Task task = taskRepository.findById(taskId).orElseThrow(() -> new RestException("Task not found", HttpStatus.NOT_FOUND));
+		if(isAdmin || task.getUsers().contains(UserIdAuthentificated)) {
+			Signature signature = new Signature(UserIdAuthentificated, fileName);
+			signatureRepository.save(signature);
+			task.setSignature(signature);
+			task.setType(2);
+			taskRepository.save(task);
+		    Map<String, Object> response = new HashMap<>();
+		    response.put("message", "File added successfuly");
+		    return ResponseEntity.ok().body(response);
+		}else {
+			throw new RestException("Action not allowed", HttpStatus.FORBIDDEN);
+		}
 	}
 }

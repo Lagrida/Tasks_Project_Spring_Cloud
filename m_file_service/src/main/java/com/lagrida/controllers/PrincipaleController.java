@@ -4,6 +4,7 @@ import static java.nio.file.Files.copy;
 import static java.nio.file.Paths.get;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -97,6 +98,61 @@ public class PrincipaleController {
 	    Map<String, Object> response = new HashMap<>();
 	    response.put("message", "All files are deleted");
 	    return ResponseEntity.ok().body(response);
+	}
+	@PreAuthorize("hasRole('ROLE_USER')")
+	@PostMapping("/add_signature_task/{taskId}")
+	@Transactional
+	public ResponseEntity<Map<String, Object>> addSignature2Task(@PathVariable long taskId, @RequestParam("file") MultipartFile file, HttpServletRequest request) throws IOException, MaxUploadSizeExceededException{
+		
+		long fileSize = file.getSize();
+		String fileOriginalName = file.getOriginalFilename();
+		String fileExtension = filesService.getExtension(fileOriginalName);
+		
+		String filesDirectory = "tasks\\signatures";
+		String serviceSource = "task-service";
+		String additionalSource = "signatures";
+		
+		logger.info("fileName : {}", fileOriginalName);
+		logger.info("extension : {}", fileExtension);
+		
+		AppFile appFile = new AppFile();
+		appFile.setFileSize(fileSize);
+		appFile.setFileOriginalName(fileOriginalName);
+		appFile.setServiceSource(serviceSource);
+		appFile.setAdditionalSource(additionalSource);
+		
+		if(!filesService.checkExtension(fileExtension)) { // banal check of extension, must do moooore
+			throw new RestException("Extension not allowed", HttpStatus.FORBIDDEN, fileOriginalName);
+		}
+		//----------------------------- Stateless getting user ID -------------------------------
+		String authorizationHeader = request.getHeader("Authorization");
+		String token = authorizationHeader.substring(7);
+		long UserIdAuthentificated = jwtUtility.getUserIdAuthentificated(token);
+		boolean isAdmin = jwtUtility.isAdmin(token);
+		//---------------------------------------------------------------------------------------
+		Task task = taskService.getTask(taskId, token);
+		if(isAdmin || task.getUsers().contains(UserIdAuthentificated)) {
+			
+			String newFileName = filesService.generateRandomText();
+			appFile.setFileExtension(fileExtension);
+			appFile.setUserOwner(UserIdAuthentificated);
+			appFile.setSource(task.getId());
+			appFile.setFileDirectory(filesDirectory);
+			
+			fileRepository.save(appFile);
+			newFileName = appFile.getId() + "-" + newFileName;
+			filesService.uploadTheFile(file, newFileName, fileExtension, filesDirectory);
+			appFile.setFileName(newFileName);
+			fileRepository.save(appFile);
+			
+			taskService.addSignature2Task(task.getId(), appFile.getFileName(), token);
+			
+		    Map<String, Object> response = new HashMap<>();
+		    response.put("message", "Signature added successfuly");
+		    return ResponseEntity.ok().body(response);
+		}else {
+			throw new RestException("Action not allowed", HttpStatus.FORBIDDEN);
+		}
 	}
 	@PreAuthorize("hasRole('ROLE_ADMIN')")
 	@PostMapping("/add_file_task/{taskId}")

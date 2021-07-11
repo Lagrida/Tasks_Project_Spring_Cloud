@@ -40,5 +40,10 @@ public class TaskService {
 		//restTemplate.post
 		//restTemplate.exchange(TASK_SERVICE + "tasks/add_file_2_task/{taskId}/{fileId}", HttpMethod.POST, entity, null, map);
 	}
-	
+	public void addSignature2Task(long taskId, String fileName, String bearerToken) {
+		HttpHeaders headers = new HttpHeaders();
+		headers.setBearerAuth(bearerToken);
+		HttpEntity<String> entity = new HttpEntity<>("body", headers);
+		restTemplate.exchange(TASK_SERVICE + "tasks/add_signature_2_task/" + taskId + "/" + fileName, HttpMethod.POST, entity, Object.class);
+	}
 }
