@@ -110,7 +110,7 @@ public class PrincipalController {
 		return users;
 	}
 	@PostMapping("/addUser")
-	public User addUser(@Valid @RequestBody User user) {
+	public User addUser(@Validated({ ValidateInsertion.class }) @RequestBody User user) {
 		User userInfo = new User();
 		Set<Roles> roles = new HashSet<>();
 		roles.add(Roles.ROLE_USER);
