@@ -8,6 +8,8 @@ import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.client.RestTemplate;
 
+import brave.sampler.Sampler;
+
 @SpringBootApplication
 @EnableDiscoveryClient
 public class MTaskServiceApplication {
@@ -26,5 +28,8 @@ public class MTaskServiceApplication {
 	        return execution.execute(request, body);
 	    })).build();*/
 	}
-
+	@Bean
+	public Sampler defaultSampler() {
+		return Sampler.ALWAYS_SAMPLE;
+	}
 }

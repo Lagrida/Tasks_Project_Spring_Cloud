@@ -46,6 +46,7 @@ public class User {
 	
 	@NotNull(message = "password may not be null", groups = { ValidateInsertion.class })
 	@NotEmpty(message = "password may not be null", groups = { ValidateInsertion.class })
+	@Size(min=6, max=32, message="password must have 6 caracteres min", groups = { ValidateInsertion.class })
 	@Transient
 	private String password;
 	

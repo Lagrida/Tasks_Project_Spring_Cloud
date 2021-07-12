@@ -22,6 +22,8 @@ import com.lagrida.entities.User;
 import com.lagrida.repositories.UserRepository;
 import com.lagrida.security.auth.Roles;
 
+import brave.sampler.Sampler;
+
 //import brave.sampler.Sampler;
 
 @SpringBootApplication
@@ -33,10 +35,10 @@ public class MUserServiceApplication {
 	public RestTemplate restemplate() {
 		return new RestTemplate();
 	}
-	/*@Bean
+	@Bean
 	public Sampler defaultSampler() {
 		return Sampler.ALWAYS_SAMPLE;
-	}*/
+	}
 	
 	public static void main(String[] args) {
 		ApplicationContext context = SpringApplication.run(MUserServiceApplication.class, args);
